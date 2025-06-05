@@ -33,18 +33,34 @@
 ---
 
 ## 🏗️ Project Architecture
-
 ```mermaid
-graph TD
-  A[User Input: Audio/Text] --> B[FastAPI Server]
-  B --> C[Sentiment Analysis (Text + Audio)]
-  C --> D[Fusion Logic]
-  B --> E[Whisper Transcriber (if audio)]
-  D --> F[LangChain LLM (Azure GPT-4o)]
-  F --> G[TTS Response Generator]
-  F --> H[DB Logger (SQLite)]
-  G --> I[Frontend (Audio + Text)]
-  I --> A
+flowchart TD
+    UserInput[User Input: Text or Audio]
+    APIEndpoint["FastAPI POST /chat/"]
+    Transcription["Transcribe Audio → Text"]
+    TextSentiment["Analyze Text Sentiment"]
+    AudioSentiment["Analyze Audio Sentiment (if audio)"]
+    FuseSentiment["Fuse Text + Audio Sentiments"]
+    LLM["Call LLM with Input + Memory + Sentiment Context"]
+    LLMResponse["LLM Response (Text)"]
+    TTS["Generate Text-to-Speech Audio"]
+    DB["Log Conversation in Database"]
+    APIResponse["Return JSON response containing text and audio file URL"]
+    Frontend["Frontend Displays Text & Plays Audio"]
+
+    UserInput --> APIEndpoint
+    APIEndpoint -->|If Audio| Transcription --> TextSentiment
+    APIEndpoint -->|If Text| TextSentiment
+    APIEndpoint -->|If Audio| AudioSentiment
+    TextSentiment --> FuseSentiment
+    AudioSentiment --> FuseSentiment
+    FuseSentiment --> LLM
+    LLM --> LLMResponse
+    LLMResponse --> TTS
+    LLMResponse --> DB
+    TTS --> DB
+    DB --> APIResponse
+    APIResponse --> Frontend
 ```
 
 ---
@@ -55,7 +71,7 @@ graph TD
 | ----------- | ---------------------------------------- |
 | 🎯 Backend  | Python, FastAPI                          |
 | 🧠 AI       | LangChain 3.0, Azure OpenAI GPT-4o       |
-| 🿫 Memory   | LangChain Summary Buffer                 |
+| 💻 Memory   | LangChain Summary Buffer                 |
 | 🧪 NLP      | VaderSentiment, Whisper, pyAudioAnalysis |
 | 🔊 Audio    | pyttsx3, Whisper                         |
 | 📁 Database | SQLite                                   |
