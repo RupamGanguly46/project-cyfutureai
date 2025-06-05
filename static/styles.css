@@ -1,0 +1,109 @@
+body {
+  font-family: sans-serif;
+  background: #f9f9f9;
+  margin: 0;
+  padding: 0;
+}
+.chat-container {
+  max-width: 600px;
+  margin: 40px auto;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  height: 90vh;
+}
+.chat-header {
+  padding: 20px;
+  background: #673ab7;
+  color: white;
+}
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+.chat-input-container {
+  padding: 15px;
+  border-top: 1px solid #ddd;
+}
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.text-input {
+  flex: 1;
+  resize: none;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+.btn {
+  background: #673ab7;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 18px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #5e35b1;
+}
+.file-input {
+  display: none;
+}
+.recording-indicator {
+  display: none;
+  margin-bottom: 10px;
+  color: red;
+}
+.recording-indicator.active {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.recording-wave span {
+  width: 5px;
+  height: 15px;
+  background: red;
+  margin: 0 1px;
+  animation: blink 1s infinite ease-in-out;
+}
+@keyframes blink {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(2); }
+}
+.message.user .message-content {
+  background: #e8f5e9;
+  align-self: flex-end;
+}
+.message.bot .message-content {
+  background: #ede7f6;
+  align-self: flex-start;
+}
+.message-content {
+  border-radius: 10px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  max-width: 80%;
+}
+.message-time {
+  font-size: 10px;
+  color: #777;
+  margin-top: 5px;
+  text-align: right;
+}
+.audio-player audio {
+  margin-top: 10px;
+  width: 100%;
+}
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin: 10px 0;
+}

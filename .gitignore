@@ -1,0 +1,20 @@
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore environment files
+.env
+
+# Ignore local database file
+conversations.db
+
+# Ignore uploads directory (if you don't want to track user uploads)
+uploads/
+
+# Ignore audio output folder
+static/audio/
+
+
+.venv/
+
+test/
