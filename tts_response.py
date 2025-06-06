@@ -1,7 +1,6 @@
 import pyttsx3
 import uuid
 import os
-import threading
 
 OUTPUT_DIR = "static/audio"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
