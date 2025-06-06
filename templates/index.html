@@ -1,402 +1,3 @@
-<!-- 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI-Powered L1 Automation</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-
-</head>
-<body>
-  <div class="chat-container">
-    <div class="chat-header">
-      <h1>AI-Powered L1 Assistant</h1>
-      <p>Ask questions or upload audio files</p>
-    </div>
-    
-    <div class="chat-messages" id="chatMessages">
-      <div class="empty-chat">
-        <div class="empty-chat-icon">🤖</div>
-        <h3>Welcome to AI Assistant</h3>
-        <p>Type a message or record audio to get started</p>
-      </div>
-    </div>
-    
-    <div class="chat-input-container">
-      <div class="recording-indicator" id="recordingIndicator">
-        <div class="recording-wave">
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
-        <span>Recording... Click to stop</span>
-      </div>
-      
-      <div class="input-wrapper">
-        <textarea 
-          class="text-input" 
-          id="textInput" 
-          placeholder="Type your message here..."
-          rows="1"
-        ></textarea>
-        
-        <div class="control-buttons">
-          <button class="btn btn-file" id="fileBtn" title="Upload audio file">
-            📁
-          </button>
-          <input type="file" class="file-input" id="fileInput" accept="audio/*" />
-          
-          <button class="btn btn-voice" id="voiceBtn" title="Record voice message">
-            🎤
-          </button>
-          
-          <button class="btn btn-send" id="sendBtn" title="Send message">
-            ➤
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    class ChatInterface {
-      constructor() {
-        this.chatMessages = document.getElementById('chatMessages');
-        this.textInput = document.getElementById('textInput');
-        this.sendBtn = document.getElementById('sendBtn');
-        this.voiceBtn = document.getElementById('voiceBtn');
-        this.fileBtn = document.getElementById('fileBtn');
-        this.fileInput = document.getElementById('fileInput');
-        this.recordingIndicator = document.getElementById('recordingIndicator');
-        
-        this.isRecording = false;
-        this.mediaRecorder = null;
-        this.audioChunks = [];
-        this.conversations = [];
-        
-        this.initializeEventListeners();
-        this.autoResizeTextarea();
-      }
-
-      initializeEventListeners() {
-        // Send button click
-        this.sendBtn.addEventListener('click', () => this.handleSend());
-        
-        // Enter key to send (Shift+Enter for new line)
-        this.textInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            this.handleSend();
-          }
-        });
-        
-        // Voice recording
-        this.voiceBtn.addEventListener('click', () => this.toggleRecording());
-        
-        // File upload
-        this.fileBtn.addEventListener('click', () => this.fileInput.click());
-        this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-        
-        // Auto-resize textarea
-        this.textInput.addEventListener('input', () => this.autoResizeTextarea());
-      }
-
-      autoResizeTextarea() {
-        this.textInput.style.height = 'auto';
-        this.textInput.style.height = Math.min(this.textInput.scrollHeight, 120) + 'px';
-      }
-
-      async toggleRecording() {
-        if (!this.isRecording) {
-          await this.startRecording();
-        } else {
-          this.stopRecording();
-        }
-      }
-
-      async startRecording() {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          this.mediaRecorder = new MediaRecorder(stream);
-          this.audioChunks = [];
-
-          this.mediaRecorder.ondataavailable = (event) => {
-            this.audioChunks.push(event.data);
-          };
-
-          this.mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-            this.sendAudioMessage(audioBlob);
-            stream.getTracks().forEach(track => track.stop());
-          };
-
-          this.mediaRecorder.start();
-          this.isRecording = true;
-          this.voiceBtn.classList.add('recording');
-          this.recordingIndicator.classList.add('active');
-        } catch (error) {
-          this.showError('Could not access microphone: ' + error.message);
-        }
-      }
-
-      stopRecording() {
-        if (this.mediaRecorder && this.isRecording) {
-          this.mediaRecorder.stop();
-          this.isRecording = false;
-          this.voiceBtn.classList.remove('recording');
-          this.recordingIndicator.classList.remove('active');
-        }
-      }
-
-      handleSend() {
-        const text = this.textInput.value.trim();
-        if (text) {
-          this.sendTextMessage(text);
-          this.textInput.value = '';
-          this.autoResizeTextarea();
-        }
-      }
-
-      handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (file && file.type.startsWith('audio/')) {
-          this.sendAudioMessage(file);
-        } else if (file) {
-          this.showError('Please select an audio file.');
-        }
-        event.target.value = '';
-      }
-
-      // addMessage(content, type, audioUrl = null) {
-      //   // Remove empty chat placeholder
-      //   const emptyChat = this.chatMessages.querySelector('.empty-chat');
-      //   if (emptyChat) {
-      //     emptyChat.remove();
-      //   }
-
-      //   const messageDiv = document.createElement('div');
-      //   messageDiv.className = `message ${type}`;
-        
-      //   const now = new Date();
-      //   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-      //   let audioHtml = '';
-      //   if (audioUrl) {
-      //     audioHtml = `<div class="audio-player"><audio controls><source src="${audioUrl}" type="audio/mpeg">Your browser does not support the audio element.</audio></div>`;
-      //   }
-        
-      //   messageDiv.innerHTML = `
-      //     <div class="message-content">
-      //       ${content}
-      //       ${audioHtml}
-      //       <div class="message-time">${timeStr}</div>
-      //     </div>
-      //   `;
-        
-      //   this.chatMessages.appendChild(messageDiv);
-      //   this.scrollToBottom();
-        
-      //   // Store in conversation history
-      //   this.conversations.push({
-      //     type,
-      //     content,
-      //     audioUrl,
-      //     timestamp: now.toISOString()
-      //   });
-      // }
-
-      addMessage(content, type, audioUrl = null) {
-        // Remove empty chat placeholder
-        const emptyChat = this.chatMessages.querySelector('.empty-chat');
-        if (emptyChat) {
-          emptyChat.remove();
-        }
-
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${type}`;
-
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        let audioHtml = '';
-        if (audioUrl) {
-          audioHtml = `
-            <div class="audio-player">
-              <audio controls>
-                <source src="${audioUrl}" type="audio/mpeg" />
-                Your browser does not support the audio element.
-              </audio>
-            </div>
-          `;
-        }
-
-        messageDiv.innerHTML = `
-          <div class="message-content">
-            <div>${content}</div>
-            ${audioHtml}
-            <div class="message-time">${timeStr}</div>
-          </div>
-        `;
-
-        this.chatMessages.appendChild(messageDiv);
-        this.scrollToBottom();
-
-        // Store in conversation history
-        this.conversations.push({
-          type,
-          content,
-          audioUrl,
-          timestamp: now.toISOString()
-        });
-      }
-
-
-      showProcessing() {
-        const processingDiv = document.createElement('div');
-        processingDiv.className = 'message bot';
-        processingDiv.id = 'processing-message';
-        processingDiv.innerHTML = `
-          <div class="message-content">
-            <div class="processing">
-              <div class="loading-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-              <span>AI is thinking...</span>
-            </div>
-          </div>
-        `;
-        this.chatMessages.appendChild(processingDiv);
-        this.scrollToBottom();
-      }
-
-      hideProcessing() {
-        const processingMsg = document.getElementById('processing-message');
-        if (processingMsg) {
-          processingMsg.remove();
-        }
-      }
-
-      showError(message) {
-        this.hideProcessing();
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.textContent = message;
-        this.chatMessages.appendChild(errorDiv);
-        this.scrollToBottom();
-        
-        setTimeout(() => {
-          errorDiv.remove();
-        }, 5000);
-      }
-
-      async sendTextMessage(text) {
-        this.addMessage(text, 'user');
-        this.showProcessing();
-        
-        try {
-          const formData = new FormData();
-          formData.append('text', text);
-          
-          const response = await fetch('/chat/', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const data = await response.json();
-          this.hideProcessing();
-          
-          if (data.error) {
-            this.showError(data.error);
-            return;
-          }
-          
-          let audioUrl = null;
-          if (data.audio_path) {
-            audioUrl = data.audio_path.startsWith('/static/') 
-              ? data.audio_path 
-              : '/static/' + data.audio_path;
-          }
-          
-          this.addMessage(data.response, 'bot', audioUrl);
-          
-          // Auto-play audio response
-          if (audioUrl) {
-            setTimeout(() => {
-              const audio = this.chatMessages.querySelector('.message:last-child audio');
-              if (audio) {
-                audio.play().catch(e => console.log('Audio autoplay prevented'));
-              }
-            }, 500);
-          }
-          
-        } catch (error) {
-          this.hideProcessing();
-          this.showError('Network error: ' + error.message);
-        }
-      }
-
-      async sendAudioMessage(audioBlob) {
-        this.addMessage('🎵 Audio message sent', 'user');
-        this.showProcessing();
-        
-        try {
-          const formData = new FormData();
-          formData.append('file', audioBlob, 'recording.wav');
-          
-          const response = await fetch('/chat/', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const data = await response.json();
-          this.hideProcessing();
-          
-          if (data.error) {
-            this.showError(data.error);
-            return;
-          }
-          
-          let audioUrl = null;
-          if (data.audio_path) {
-            audioUrl = data.audio_path.startsWith('/static/') 
-              ? data.audio_path 
-              : '/static/' + data.audio_path;
-          }
-          
-          this.addMessage(data.response, 'bot', audioUrl);
-          
-          // Auto-play audio response
-          if (audioUrl) {
-            setTimeout(() => {
-              const audio = this.chatMessages.querySelector('.message:last-child audio');
-              if (audio) {
-                audio.play().catch(e => console.log('Audio autoplay prevented'));
-              }
-            }, 500);
-          }
-          
-        } catch (error) {
-          this.hideProcessing();
-          this.showError('Network error: ' + error.message);
-        }
-      }
-
-      scrollToBottom() {
-        setTimeout(() => {
-          this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-        }, 100);
-      }
-    }
-
-    // Initialize the chat interface when the page loads
-    document.addEventListener('DOMContentLoaded', () => {
-      new ChatInterface();
-    });
-  </script>
-</body>
-</html> -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -646,6 +247,7 @@
       }
 
       async sendTextMessage(text) {
+
         this.addMessage(text, 'user');
         this.showProcessing();
 
@@ -673,7 +275,6 @@
       }
 
       async sendAudioMessage(audioBlob) {
-        this.addMessage('🎵 Audio message sent', 'user');
         this.showProcessing();
 
         try {
@@ -684,15 +285,27 @@
           const data = await response.json();
 
           this.hideProcessing();
+
           if (data.error) return this.showError(data.error);
 
-          const audioUrl = data.audio_path ? `/static/${data.audio_path.replace(/^\/static\//, '')}` : null;
-          this.addMessage(data.response, 'bot', audioUrl);
+          const userAudioUrl = data.user_audio_path
+            ? `/uploads/${data.user_audio_path}`
+            : URL.createObjectURL(audioBlob);
 
-          if (audioUrl) setTimeout(() => {
-            const audio = this.chatMessages.querySelector('.message:last-child audio');
-            if (audio) audio.play().catch(() => {});
-          }, 500);
+          this.addMessage('🎵 Audio message sent', 'user', userAudioUrl);
+
+          const botAudioUrl = data.audio_path
+            ? `/static/${data.audio_path.replace(/^\/?static\//, '')}`
+            : null;
+
+          this.addMessage(data.response, 'bot', botAudioUrl);
+
+          if (botAudioUrl) {
+            setTimeout(() => {
+              const audio = this.chatMessages.querySelector('.message:last-child audio');
+              if (audio) audio.play().catch(() => {});
+            }, 500);
+          }
         } catch (error) {
           this.hideProcessing();
           this.showError('Network error: ' + error.message);
