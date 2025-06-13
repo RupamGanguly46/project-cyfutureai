@@ -15,7 +15,6 @@ from tts_response import generate_tts
 from chat_memory import memory
 
 import logging
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -56,12 +55,14 @@ async def chat_endpoint(text: str = Form(None), file: UploadFile = File(None)):
         if not text:
             return JSONResponse({"error": "No text or audio file provided"}, status_code=400)
         user_input = text
-
+    
     # Analyze text sentiment
     text_sentiment = analyze_text_sentiment(user_input)
 
     # Fuse text and audio sentiments
     sentiment = fuse_sentiments(text_sentiment, audio_sentiment)
+
+    print(f"{audio_sentiment=},{text_sentiment=},{sentiment=}")
 
     # Get LLM response with chat memory
     response = get_response(user_input, sentiment)

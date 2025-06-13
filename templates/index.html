@@ -326,8 +326,7 @@
 </body>
 </html> -->
 
-
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -418,6 +417,357 @@
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         
         document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        this.updateThemeToggle(newTheme);
+      }
+
+      updateThemeToggle(theme) {
+        this.themeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+      }
+
+      autoResizeTextarea() {
+        this.textInput.style.height = 'auto';
+        this.textInput.style.height = Math.min(this.textInput.scrollHeight, 120) + 'px';
+      }
+
+      async toggleRecording() {
+        if (!this.isRecording) {
+          await this.startRecording();
+        } else {
+          this.stopRecording();
+        }
+      }
+
+      async startRecording() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          this.mediaRecorder = new MediaRecorder(stream);
+          this.audioChunks = [];
+
+          this.mediaRecorder.ondataavailable = (event) => {
+            this.audioChunks.push(event.data);
+          };
+
+          this.mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+            const audioURL = URL.createObjectURL(audioBlob);
+            this.previewAudio(audioURL, audioBlob);
+            stream.getTracks().forEach(track => track.stop());
+          };
+
+          this.mediaRecorder.start();
+          this.isRecording = true;
+          this.voiceBtn.classList.add('recording');
+          this.recordingIndicator.classList.add('active');
+        } catch (error) {
+          this.showError('Could not access microphone: ' + error.message);
+        }
+      }
+
+      stopRecording() {
+        if (this.mediaRecorder && this.isRecording) {
+          this.mediaRecorder.stop();
+          this.isRecording = false;
+          this.voiceBtn.classList.remove('recording');
+          this.recordingIndicator.classList.remove('active');
+        }
+      }
+
+      previewAudio(audioURL, audioBlob) {
+        this.clearAudioPreview();
+
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'audio-preview';
+        previewDiv.id = 'audioPreview';
+
+        previewDiv.innerHTML = `
+          <div class="message user">
+            <div class="message-content">
+              <div class="audio-player">
+                <audio controls src="${audioURL}"></audio>
+              </div>
+              <div class="preview-buttons">
+                <button class="btn btn-send" id="sendPreviewBtn">✔</button>
+                <button class="btn btn-cancel" id="cancelPreviewBtn">❌</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        this.chatMessages.appendChild(previewDiv);
+        this.scrollToBottom();
+
+        document.getElementById('sendPreviewBtn').addEventListener('click', () => {
+          this.sendAudioMessage(audioBlob);
+          this.clearAudioPreview();
+        });
+
+        document.getElementById('cancelPreviewBtn').addEventListener('click', () => {
+          this.clearAudioPreview();
+        });
+      }
+
+      clearAudioPreview() {
+        const previewDiv = document.getElementById('audioPreview');
+        if (previewDiv) previewDiv.remove();
+      }
+
+      handleSend() {
+        const text = this.textInput.value.trim();
+        if (text) {
+          this.sendTextMessage(text);
+          this.textInput.value = '';
+          this.autoResizeTextarea();
+        }
+      }
+
+      handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (file && file.type.startsWith('audio/')) {
+          this.sendAudioMessage(file);
+        } else if (file) {
+          this.showError('Please select an audio file.');
+        }
+        event.target.value = '';
+      }
+
+      addMessage(content, type, audioUrl = null) {
+        const emptyChat = this.chatMessages.querySelector('.empty-chat');
+        if (emptyChat) emptyChat.remove();
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        let audioHtml = '';
+        if (audioUrl) {
+          audioHtml = `
+            <div class="audio-player">
+              <audio controls>
+                <source src="${audioUrl}" type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
+            </div>`;
+        }
+
+        messageDiv.innerHTML = `
+          <div class="message-content">
+            <div>${content}</div>
+            ${audioHtml}
+            <div class="message-time">${timeStr}</div>
+          </div>
+        `;
+
+        this.chatMessages.appendChild(messageDiv);
+        this.scrollToBottom();
+
+        this.conversations.push({ type, content, audioUrl, timestamp: now.toISOString() });
+      }
+
+      showProcessing() {
+        const processingDiv = document.createElement('div');
+        processingDiv.className = 'message bot';
+        processingDiv.id = 'processing-message';
+        processingDiv.innerHTML = `
+          <div class="message-content">
+            <div class="processing">
+              <div class="loading-dots"><span></span><span></span><span></span></div>
+              <span>AI is thinking...</span>
+            </div>
+          </div>`;
+        this.chatMessages.appendChild(processingDiv);
+        this.scrollToBottom();
+      }
+
+      hideProcessing() {
+        const processingMsg = document.getElementById('processing-message');
+        if (processingMsg) processingMsg.remove();
+      }
+
+      showError(message) {
+        this.hideProcessing();
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        this.chatMessages.appendChild(errorDiv);
+        this.scrollToBottom();
+
+        setTimeout(() => errorDiv.remove(), 5000);
+      }
+
+      async sendTextMessage(text) {
+        this.addMessage(text, 'user');
+        this.showProcessing();
+
+        try {
+          const formData = new FormData();
+          formData.append('text', text);
+
+          const response = await fetch('/chat/', { method: 'POST', body: formData });
+          const data = await response.json();
+
+          this.hideProcessing();
+          if (data.error) return this.showError(data.error);
+
+          const audioUrl = data.audio_path ? `/static/${data.audio_path.replace(/^\/static\//, '')}` : null;
+          this.addMessage(data.response, 'bot', audioUrl);
+
+          if (audioUrl) setTimeout(() => {
+            const audio = this.chatMessages.querySelector('.message:last-child audio');
+            if (audio) audio.play().catch(() => {});
+          }, 500);
+        } catch (error) {
+          this.hideProcessing();
+          this.showError('Network error: ' + error.message);
+        }
+      }
+
+      async sendAudioMessage(audioBlob) {
+        this.showProcessing();
+
+        try {
+          const formData = new FormData();
+          formData.append('file', audioBlob, 'recording.wav');
+
+          const response = await fetch('/chat/', { method: 'POST', body: formData });
+          const data = await response.json();
+
+          this.hideProcessing();
+
+          if (data.error) return this.showError(data.error);
+
+          const userAudioUrl = data.user_audio_path
+            ? `/uploads/${data.user_audio_path}`
+            : URL.createObjectURL(audioBlob);
+
+          this.addMessage('🎵 Audio message sent', 'user', userAudioUrl);
+
+          const botAudioUrl = data.audio_path
+            ? `/static/${data.audio_path.replace(/^\/?static\//, '')}`
+            : null;
+
+          this.addMessage(data.response, 'bot', botAudioUrl);
+
+          if (botAudioUrl) {
+            setTimeout(() => {
+              const audio = this.chatMessages.querySelector('.message:last-child audio');
+              if (audio) audio.play().catch(() => {});
+            }, 500);
+          }
+        } catch (error) {
+          this.hideProcessing();
+          this.showError('Network error: ' + error.message);
+        }
+      }
+
+      scrollToBottom() {
+        setTimeout(() => {
+          this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        }, 100);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      new ChatInterface();
+    });
+  </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI-Powered L1 Automation</title>
+ <link rel="stylesheet" href="/static/styles.css"/>
+ <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+</head>
+<body data-theme="light">
+  <div class="chat-container">
+    <div class="chat-header">
+      <button class="theme-toggle" id="themeToggle">🌙</button>
+      <h1>AI-Powered L1 Assistant</h1>
+      <p>Ask questions or upload audio files</p>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="empty-chat">
+        <div class="empty-chat-icon">🤖</div>
+        <h3>Welcome to AI Assistant</h3>
+        <p>Type a message or record audio to get started</p>
+      </div>
+    </div>
+
+    <div class="recording-indicator" id="recordingIndicator">
+      <div class="recording-wave">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <span>Recording... Click to stop or cancel</span>
+    </div>
+
+    <div class="input-wrapper">
+      <textarea class="text-input" id="textInput" placeholder="Type your message here..." rows="1"></textarea>
+
+      <div class="control-buttons">
+        <button class="btn btn-file" id="fileBtn" title="Upload audio file">📁</button>
+        <input type="file" class="file-input" id="fileInput" accept="audio/*" />
+        <button class="btn btn-voice" id="voiceBtn" title="Record voice message">🎤</button>
+        <button class="btn btn-send" id="sendBtn" title="Send message">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class ChatInterface {
+      constructor() {
+        this.chatMessages = document.getElementById('chatMessages');
+        this.textInput = document.getElementById('textInput');
+        this.sendBtn = document.getElementById('sendBtn');
+        this.voiceBtn = document.getElementById('voiceBtn');
+        this.fileBtn = document.getElementById('fileBtn');
+        this.fileInput = document.getElementById('fileInput');
+        this.recordingIndicator = document.getElementById('recordingIndicator');
+        this.themeToggle = document.getElementById('themeToggle');
+
+        this.isRecording = false;
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.conversations = [];
+
+        this.initializeEventListeners();
+        this.initializeTheme();
+        this.autoResizeTextarea();
+      }
+
+      initializeEventListeners() {
+        this.sendBtn.addEventListener('click', () => this.handleSend());
+        this.textInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.handleSend();
+          }
+        });
+        this.voiceBtn.addEventListener('click', () => this.toggleRecording());
+        this.fileBtn.addEventListener('click', () => this.fileInput.click());
+        this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+        this.textInput.addEventListener('input', () => this.autoResizeTextarea());
+        this.themeToggle.addEventListener('click', () => this.toggleTheme());
+      }
+
+      initializeTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', savedTheme);
+        this.updateThemeToggle(savedTheme);
+      }
+
+      toggleTheme() {
+        const currentTheme = document.body.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.body.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         this.updateThemeToggle(newTheme);
       }
