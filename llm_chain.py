@@ -44,7 +44,7 @@
 #     return conversation.predict(input=prompt)
 
 from langchain_openai import AzureChatOpenAI
-from langchain.prompts import PromptTemplate
+# from langchain.prompts import PromptTemplate
 from chat_memory import memory
 import os
 from dotenv import load_dotenv
@@ -59,7 +59,7 @@ llm = AzureChatOpenAI(
     model_name="gpt-4o",
     azure_deployment="gpt-4o",
     api_version="2024-02-15-preview",
-    temperature=0.7,
+    temperature=0.3,
     max_tokens=1000
 )
 
@@ -149,10 +149,21 @@ User: {input}
 
 Assistant:"""
 
-prompt = PromptTemplate(
-    input_variables = ["history", "input"],
-    template = system_prompt + "\nConversation Summary:\n{history}\n\nUser: {input}\nAssistant:"
-)
+# prompt = PromptTemplate(
+#     input_variables = ["history", "input"],
+#     template = system_prompt + "\nConversation Summary:\n{history}\n\nUser: {input}\nAssistant:"
+# )
+
+from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+
+system_message = SystemMessagePromptTemplate.from_template(system_prompt)
+human_message = HumanMessagePromptTemplate.from_template("{input}")
+
+chat_prompt = ChatPromptTemplate.from_messages([
+    system_message,
+    HumanMessagePromptTemplate.from_template("Conversation Summary:\n{history}\n\nUser: {input}")
+])
+
 
 def get_response(user_input: str, sentiment: str = None):
     full_input = f"[User sentiment: {sentiment}]\n{user_input}" if sentiment else user_input
@@ -161,7 +172,8 @@ def get_response(user_input: str, sentiment: str = None):
     summary = memory.load_memory_variables({}).get("history", "")
 
     # Format the final prompt
-    prompt_text = prompt.format(input=full_input, history=summary)
+    # prompt_text = prompt.format(input=full_input, history=summary)
+    prompt_text = chat_prompt.format(input=full_input, history=summary)
 
     # Get LLM response
     response = llm.invoke(prompt_text)

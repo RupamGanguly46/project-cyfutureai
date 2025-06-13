@@ -1,9 +1,102 @@
-from fastapi import FastAPI, Request, UploadFile, File, Form
+# from fastapi import FastAPI, Request, UploadFile, File, Form
+# from fastapi.responses import HTMLResponse, JSONResponse
+# from fastapi.staticfiles import StaticFiles
+# from fastapi.templating import Jinja2Templates
+# import os
+# import uuid
+
+# from audio_transcriber import transcribe_audio
+# from text_sentiment import analyze_text_sentiment
+# from audio_sentiment import analyze_audio_emotion
+# from fusion_logic import fuse_sentiments
+# from llm_chain import get_response
+# from database import insert_chat
+# from tts_response import generate_tts
+# from chat_memory import memory
+
+# import logging
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
+
+# # Create uploads directory once
+# UPLOAD_DIR = "uploads"
+# os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# app = FastAPI()
+# app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# templates = Jinja2Templates(directory="templates")
+
+
+# @app.get("/", response_class=HTMLResponse)
+# async def home(request: Request):
+#     return templates.TemplateResponse("index.html", {"request": request})
+
+
+# @app.post("/chat/")
+# async def chat_endpoint(text: str = Form(None), file: UploadFile = File(None)):
+#     user_input = ""
+#     audio_sentiment = None
+
+#     if file:
+#         file_ext = os.path.splitext(file.filename)[1]
+#         unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+#         file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+#         contents = await file.read()
+#         with open(file_path, "wb") as f:
+#             f.write(contents)
+
+#         user_input = transcribe_audio(file_path)
+#         audio_sentiment = analyze_audio_emotion(file_path)
+
+#     else:
+#         # If no audio, use text input directly
+#         if not text:
+#             return JSONResponse({"error": "No text or audio file provided"}, status_code=400)
+#         user_input = text
+    
+#     # Analyze text sentiment
+#     text_sentiment = analyze_text_sentiment(user_input)
+
+#     # Fuse text and audio sentiments
+#     sentiment = fuse_sentiments(text_sentiment, audio_sentiment)
+
+#     print(f"{audio_sentiment=},{text_sentiment=},{sentiment=}")
+
+#     # Get LLM response with chat memory
+#     response = get_response(user_input, sentiment)
+
+#     # Generate TTS audio file path
+#     tts_path = generate_tts(response)
+
+#     # Insert chat record in DB
+#     # insert_chat(user_input, response, sentiment)
+
+#     try:
+#         insert_chat(user_input, response, sentiment)
+#     except Exception as e:
+#         logger.error(f"DB insert failed: {e}")
+
+
+#     # Return response and TTS audio path (frontend should request /static or a separate route)
+#     return JSONResponse({
+#         "response": response,
+#         "audio_path": tts_path,
+#         "user_audio_path": os.path.basename(file_path) if file else None
+#     })
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="whisper.transcribe")
+
+from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
 import uuid
+import logging
+from dotenv import load_dotenv
 
 from audio_transcriber import transcribe_audio
 from text_sentiment import analyze_text_sentiment
@@ -14,9 +107,27 @@ from database import insert_chat
 from tts_response import generate_tts
 from chat_memory import memory
 
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Load environment variables
+load_dotenv()
+
+# Logging setup
+LOG_FILE = "chatbot.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE),  # Save to file
+        logging.StreamHandler()         # Also show in terminal (controlled below)
+    ]
+)
+logger = logging.getLogger("customer-support-app")
+
+# Suppress uvicorn and other noisy loggers except critical errors
+logging.getLogger("uvicorn").setLevel(logging.ERROR)
+logging.getLogger("uvicorn.error").setLevel(logging.ERROR)
+logging.getLogger("uvicorn.access").setLevel(logging.CRITICAL)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 # Create uploads directory once
 UPLOAD_DIR = "uploads"
@@ -27,62 +138,127 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 templates = Jinja2Templates(directory="templates")
 
+MAX_UPLOAD_SIZE_MB = 10
+@app.middleware("http")
+async def limit_upload_size(request: Request, call_next):
+    if "content-length" in request.headers:
+        content_length = int(request.headers["content-length"])
+        if content_length > MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="File too large")
+    return await call_next(request)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+# @app.post("/chat/")
+# async def chat_endpoint(text: str = Form(None), file: UploadFile = File(None)):
+#     user_input = ""
+#     audio_sentiment = None
+
+#     if file:
+#         file_ext = os.path.splitext(file.filename)[1]
+#         unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+#         file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+#         contents = await file.read()
+#         with open(file_path, "wb") as f:
+#             f.write(contents)
+
+#         user_input = transcribe_audio(file_path)
+#         audio_sentiment = analyze_audio_emotion(file_path)
+#     else:
+#         if not text:
+#             return JSONResponse({"error": "No text or audio file provided"}, status_code=400)
+#         user_input = text
+
+#     # Analyze text sentiment
+#     text_sentiment = analyze_text_sentiment(user_input)
+
+#     # Fuse text and audio sentiments
+#     sentiment = fuse_sentiments(text_sentiment, audio_sentiment)
+
+#     # Log the user input
+#     logger.info(f"{user_input=}")
+#     logger.info(f"{audio_sentiment=},{text_sentiment=},{sentiment=}")
+
+#     # Get LLM response with chat memory
+#     response = get_response(user_input, sentiment)
+
+#     # Generate TTS audio file path
+#     tts_path = generate_tts(response)
+
+#     # Insert chat record in DB
+#     try:
+#         insert_chat(user_input, response, sentiment)
+#     except Exception as e:
+#         logger.error(f"DB insert failed: {e}")
+
+#     # Return response and TTS audio path
+#     return JSONResponse({
+#         "response": response,
+#         "audio_path": tts_path,
+#         "user_audio_path": os.path.basename(file_path) if file else None
+#     })
 
 @app.post("/chat/")
 async def chat_endpoint(text: str = Form(None), file: UploadFile = File(None)):
     user_input = ""
     audio_sentiment = None
-
-    if file:
-        file_ext = os.path.splitext(file.filename)[1]
-        unique_filename = f"{uuid.uuid4().hex}{file_ext}"
-        file_path = os.path.join(UPLOAD_DIR, unique_filename)
-
-        contents = await file.read()
-        with open(file_path, "wb") as f:
-            f.write(contents)
-
-        user_input = transcribe_audio(file_path)
-        audio_sentiment = analyze_audio_emotion(file_path)
-
-    else:
-        # If no audio, use text input directly
-        if not text:
-            return JSONResponse({"error": "No text or audio file provided"}, status_code=400)
-        user_input = text
-    
-    # Analyze text sentiment
-    text_sentiment = analyze_text_sentiment(user_input)
-
-    # Fuse text and audio sentiments
-    sentiment = fuse_sentiments(text_sentiment, audio_sentiment)
-
-    print(f"{audio_sentiment=},{text_sentiment=},{sentiment=}")
-
-    # Get LLM response with chat memory
-    response = get_response(user_input, sentiment)
-
-    # Generate TTS audio file path
-    tts_path = generate_tts(response)
-
-    # Insert chat record in DB
-    # insert_chat(user_input, response, sentiment)
+    file_path = None  # define here for scope
 
     try:
-        insert_chat(user_input, response, sentiment)
+        if file:
+            file_ext = os.path.splitext(file.filename)[1]
+            unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+            file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+            contents = await file.read()
+            with open(file_path, "wb") as f:
+                f.write(contents)
+
+            user_input = transcribe_audio(file_path)
+            audio_sentiment = analyze_audio_emotion(file_path)
+        else:
+            if not text:
+                return JSONResponse({"error": "No text or audio file provided"}, status_code=400)
+            user_input = text
+
+        # Analyze text sentiment
+        text_sentiment = analyze_text_sentiment(user_input)
+
+        # Fuse text and audio sentiments
+        sentiment = fuse_sentiments(text_sentiment, audio_sentiment)
+
+        # Log the user input
+        logger.info(f"{user_input=}")
+        logger.info(f"{audio_sentiment=},{text_sentiment=},{sentiment=}")
+
+        # Get LLM response with chat memory
+        response = get_response(user_input, sentiment)
+
+        # Generate TTS audio file path
+        tts_path = generate_tts(response)
+
+        # Insert chat record in DB
+        try:
+            insert_chat(user_input, response, sentiment)
+        except Exception as e:
+            logger.error(f"DB insert failed: {e}")
+
+        return JSONResponse({
+            "response": response,
+            "audio_path": tts_path,
+            "user_audio_path": os.path.basename(file_path) if file else None
+        })
+
     except Exception as e:
-        logger.error(f"DB insert failed: {e}")
+        logger.error(f"Error handling chat request: {e}", exc_info=True)
+        return JSONResponse({"error": "Internal server error"}, status_code=500)
 
-
-    # Return response and TTS audio path (frontend should request /static or a separate route)
-    return JSONResponse({
-        "response": response,
-        "audio_path": tts_path,
-        "user_audio_path": os.path.basename(file_path) if file else None
-    })
-
+if __name__ == "__main__":
+    logger.info("Server is starting...")
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, log_level="error")
+    logger.info("Server stopped.")

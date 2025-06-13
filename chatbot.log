@@ -1,0 +1,54 @@
+2025-06-13 20:20:54,297 | INFO | Server is starting...
+2025-06-13 20:22:53,883 | INFO | Server stopped.
+2025-06-13 20:23:16,854 | INFO | Server is starting...
+2025-06-13 20:24:13,415 | INFO | Server stopped.
+2025-06-13 20:24:31,141 | INFO | Server is starting...
+2025-06-13 20:27:28,684 | INFO | user_input=' Hey brother how are you?'
+2025-06-13 20:27:28,685 | INFO | audio_sentiment='neutral',text_sentiment='neutral',sentiment='neutral'
+2025-06-13 20:28:08,365 | INFO | user_input=' Hey brother, how are you?'
+2025-06-13 20:28:08,366 | INFO | audio_sentiment='neutral',text_sentiment='neutral',sentiment='neutral'
+2025-06-13 20:31:45,602 | INFO | user_input=' Kids are talking by the door!'
+2025-06-13 20:31:45,604 | INFO | audio_sentiment='neutral',text_sentiment='neutral',sentiment='neutral'
+2025-06-13 20:31:48,049 | ERROR | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2025-06-13 20:31:48,214 | ERROR | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2025-06-13 20:33:44,745 | INFO | user_input=' Kids are talking by the door!'
+2025-06-13 20:33:44,746 | INFO | audio_sentiment='neutral',text_sentiment='neutral',sentiment='neutral'
+2025-06-13 20:33:46,484 | ERROR | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2025-06-13 21:24:50,118 | INFO | Server is starting...
+2025-06-13 21:25:59,573 | INFO | user_input=' Kids are talking by the door!'
+2025-06-13 21:25:59,574 | INFO | audio_sentiment='neutral',text_sentiment='neutral',sentiment='neutral'
+2025-06-13 21:26:51,410 | INFO | user_input=" Hey, yeah, what's up?"
+2025-06-13 21:26:51,411 | INFO | audio_sentiment='neutral',text_sentiment='positive',sentiment='positive'
+2025-06-13 21:26:54,360 | ERROR | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2025-06-13 21:27:12,956 | INFO | user_input=' Explain about yourself.'
+2025-06-13 21:27:12,958 | INFO | audio_sentiment='neutral',text_sentiment='neutral',sentiment='neutral'
+2025-06-13 21:27:48,623 | INFO | user_input='Awesomeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+2025-06-13 21:27:48,623 | INFO | audio_sentiment=None,text_sentiment='neutral',sentiment='neutral'
