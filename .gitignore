@@ -18,3 +18,5 @@ static/audio/
 .venv/
 
 test/
+
+chatbot.log

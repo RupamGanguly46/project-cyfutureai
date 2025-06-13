@@ -52,3 +52,9 @@ ConnectionResetError: [WinError 10054] An existing connection was forcibly close
 2025-06-13 21:27:12,958 | INFO | audio_sentiment='neutral',text_sentiment='neutral',sentiment='neutral'
 2025-06-13 21:27:48,623 | INFO | user_input='Awesomeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
 2025-06-13 21:27:48,623 | INFO | audio_sentiment=None,text_sentiment='neutral',sentiment='neutral'
+2025-06-13 22:12:57,071 | INFO | Server is starting...
+2025-06-13 22:14:57,253 | INFO | user_input='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+2025-06-13 22:14:57,254 | INFO | audio_sentiment=None,text_sentiment='neutral',sentiment='neutral'
+2025-06-13 22:16:01,540 | INFO | user_input=' Hello'
+2025-06-13 22:16:01,540 | INFO | audio_sentiment='neutral',text_sentiment='neutral',sentiment='neutral'
+2025-06-13 22:16:16,520 | INFO | Server stopped.
