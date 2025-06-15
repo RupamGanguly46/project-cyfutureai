@@ -85,7 +85,7 @@ flowchart TD
 ```
 project-cyfutureai/
 │
-├── main.py                        # FastAPI backend logic
+├── main.py                       # FastAPI backend logic
 ├── audio_transcriber.py          # Whisper transcriber
 ├── audio_sentiment.py            # Emotion detection via audio
 ├── text_sentiment.py             # Vader-based sentiment
@@ -98,10 +98,13 @@ project-cyfutureai/
 ├── templates/
 │   └── index.html                # Interactive frontend
 ├── static/
+│   ├── favicon.ico               # For tab icon
 │   ├── styles.css                # Frontend styling
 │   └── audio/                    # TTS response files
 │
 ├── uploads/                      # Incoming audio files
+│
+├── chatbot.log                   # All logs
 ├── conversations.db              # SQLite DB file
 ├── requirements.txt              # All dependencies
 └── README.md                     # This file
