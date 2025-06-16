@@ -17,6 +17,36 @@
 
 ---
 
+## Key Updates
+🌐 **Multilingual Speech Output**
+Replaced pyttsx3 with gTTS to generate natural-sounding audio in multiple languages.
+
+🧠 **Accurate Emotion Detection via Audio**
+Integrated Wav2Vec2 (Hugging Face) to detect emotions from audio using state-of-the-art deep learning.
+
+🧏 **Improved Prompt Engineering**
+The LLM now follows strict instructions to only respond to relevant customer queries, improving focus and reliability.
+
+🎨 **Frontend Enhancements**
+* 🟣 Light/Dark mode switch
+* 🧼 Rounded corners and clean layout
+* 🛑 Fixed text overflow issues
+* 🖼️ Added custom favicon and logo
+
+🔊 **Voice Message Preview & Re-recording**
+Users can listen to their recorded message before submitting, and re-record if needed, improving input quality.
+
+📃 **Custom Logging**
+.log file for persistent logs
+Color-coded terminal output for clarity
+
+🚀 **Updated Run Command**
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --log-level critical --reload
+```
+---
+
 ## 🌐 Features
 
 * ✅ **Text & Audio Support**: Accepts both text and voice input.
