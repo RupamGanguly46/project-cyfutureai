@@ -28,10 +28,10 @@ Integrated Wav2Vec2 (Hugging Face) to detect emotions from audio using state-of-
 The LLM now follows strict instructions to only respond to relevant customer queries, improving focus and reliability.
 
 🎨 **Frontend Enhancements**
-        🟣 Light/Dark mode switch
-        🧼 Rounded corners and clean layout
-        🛑 Fixed text overflow issues
-        🖼️ Added custom favicon and logo
+* 🟣 Light/Dark mode switch
+* 🧼 Rounded corners and clean layout
+* 🛑 Fixed text overflow issues
+* 🖼️ Added custom favicon and logo
 
 🔊 **Voice Message Preview & Re-recording**
 Users can listen to their recorded message before submitting, and re-record if needed, improving input quality.
