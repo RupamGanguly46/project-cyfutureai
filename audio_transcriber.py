@@ -105,7 +105,7 @@ if not bhashini_key:
 indian_langs = ["as","bn","en","hi","kn","gu","ml","mr","or","pa","ta","te"]
 
 # Sarvam
-sarvam_key = os.getenv("SARVAM_API_KEY")
+sarvam_key = os.getenv("SARVAM_API_KEY_2")
 if not sarvam_key:
     raise ValueError("Missing Sarvam API Key.")
 
@@ -140,6 +140,7 @@ def transcribe_with_sarvam(path):
         'file': (os.path.basename(path), open(path, 'rb'), 'audio/wav'),
     }
     )
+    print(response.json())
     return response.json().get("transcript","")
 
 def bhashini_detect_language(path):

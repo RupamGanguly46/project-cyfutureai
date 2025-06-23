@@ -46,6 +46,7 @@
 from langchain_openai import AzureChatOpenAI
 # from langchain.prompts import PromptTemplate
 from chat_memory import memory
+from rag_store import retrieve_context
 import os
 from dotenv import load_dotenv
 
@@ -111,6 +112,7 @@ similar to a well-trained human customer care representative.
 -------------------------------
 - You may reference external customer support documentation.
 - Do not hallucinate or invent answers.
+- You may use the provided "Relevant Knowledge" to answer the user's question as accurately as possible.
 
 -------------------------------
 🚫 DO NOT:
@@ -144,6 +146,9 @@ SUMMARY
 """
 
 template = """
+Relevant Knowledge:
+{context}
+
 Conversation Summary:
 {history}
 
@@ -163,7 +168,7 @@ human_message = HumanMessagePromptTemplate.from_template("{input}")
 
 chat_prompt = ChatPromptTemplate.from_messages([
     system_message,
-    HumanMessagePromptTemplate.from_template("Conversation Summary:\n{history}\n\nUser: {input}")
+    HumanMessagePromptTemplate.from_template("Context:\n{context}\n\nConversation Summary:\n{history}\n\nUser: {input}")
 ])
 
 
@@ -173,9 +178,12 @@ def get_response(user_input: str, sentiment: str = None):
     # Get the current summary from memory
     summary = memory.load_memory_variables({}).get("history", "")
 
+    # Retrieve relevant context from RAG store
+    context = retrieve_context(user_input)
+
     # Format the final prompt
     # prompt_text = prompt.format(input=full_input, history=summary)
-    prompt_text = chat_prompt.format(input=full_input, history=summary)
+    prompt_text = chat_prompt.format(input=full_input, history=summary, context=context)
 
     # Get LLM response
     response = llm.invoke(prompt_text)
