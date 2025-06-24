@@ -140,7 +140,7 @@ def transcribe_with_sarvam(path):
         'file': (os.path.basename(path), open(path, 'rb'), 'audio/wav'),
     }
     )
-    print(response.json())
+    # print(response.json())
     return response.json().get("transcript","")
 
 def bhashini_detect_language(path):

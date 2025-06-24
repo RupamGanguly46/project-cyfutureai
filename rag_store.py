@@ -90,7 +90,7 @@ def build_index(folder_path, index_path):
     
     if not chunks:
         print("⚠️ No chunks to embed — skipping FAISS index creation.")
-    return None
+        return None
 
     vectorstore = FAISS.from_documents(chunks, embeddings)
     vectorstore.save_local(index_path)
@@ -106,7 +106,9 @@ if not os.path.exists(INDEX_PATH) or current_hash != saved_hash:
     save_hash(current_hash)
 else:
     print("✅ No changes detected. Loading existing FAISS index...")
-    vectorstore = FAISS.load_local(INDEX_PATH, embeddings)
+    # vectorstore = FAISS.load_local(INDEX_PATH, embeddings)
+    vectorstore = FAISS.load_local(INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
+
 
 # ✅ Retrieval function
 def retrieve_context(query, k=3):

@@ -14,9 +14,13 @@ uploads/
 # Ignore audio output folder
 static/audio/
 
-
 .venv/
 
 test/
 
 chatbot.log
+
+index_hash.txt
+
+faiss_index/
+

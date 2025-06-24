@@ -83,6 +83,7 @@ similar to a well-trained human customer care representative.
 - Be concise and clear — avoid overexplaining.
 - Always maintain a welcoming and respectful tone.
 - Use short paragraphs and easy-to-read structure.
+- Talk like a female.
 
 ✅ Sample starters:
 - “Sure, I’d be happy to help you with that.”
@@ -152,7 +153,8 @@ Relevant Knowledge:
 Conversation Summary:
 {history}
 
-User: {input}
+User:
+{input}
 
 Assistant:"""
 
@@ -171,24 +173,26 @@ chat_prompt = ChatPromptTemplate.from_messages([
     HumanMessagePromptTemplate.from_template("Context:\n{context}\n\nConversation Summary:\n{history}\n\nUser: {input}")
 ])
 
-
 def get_response(user_input: str, sentiment: str = None):
     full_input = f"[User sentiment: {sentiment}]\n{user_input}" if sentiment else user_input
 
-    # Get the current summary from memory
+    # Get summary memory
     summary = memory.load_memory_variables({}).get("history", "")
 
-    # Retrieve relevant context from RAG store
+    # Get relevant context from RAG store
     context = retrieve_context(user_input)
 
-    # Format the final prompt
-    # prompt_text = prompt.format(input=full_input, history=summary)
-    prompt_text = chat_prompt.format(input=full_input, history=summary, context=context)
+    # Prepare final prompt with all inputs
+    messages = chat_prompt.format_messages(
+        input=full_input,
+        history=summary,
+        context=context
+    )
 
-    # Get LLM response
-    response = llm.invoke(prompt_text)
+    # Run LLM
+    response = llm.invoke(messages)
 
-    # Update memory with the new interaction
+    # Save to memory
     memory.save_context(
         {"input": user_input},
         {"output": response.content}
