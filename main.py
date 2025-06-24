@@ -339,11 +339,11 @@ async def chat_endpoint(text: str = Form(None), file: UploadFile = File(None)):
         # Fuse text and audio sentiments
         sentiment = fuse_sentiments(text_sentiment, audio_sentiment)
 
-        # Get LLM response with chat memory
-        response = get_response(user_input, sentiment)
+        # # Get LLM response with chat memory
+        # response = get_response(user_input, sentiment)
 
-        # Generate TTS audio file path
-        tts_path = generate_tts(response)
+        # # Generate TTS audio file path
+        # tts_path = generate_tts(response)
 
         # Log only your custom info
         logger.info(f"{user_input=}")
@@ -351,11 +351,35 @@ async def chat_endpoint(text: str = Form(None), file: UploadFile = File(None)):
         logger.info(f"{response=}")
         logger.info(f"{tts_path=}")
 
-        # Insert chat record in DB
+        # New lines for new database
+        import time
+        start_time = time.time()
+        response = get_response(user_input, sentiment)
+        tts_path = generate_tts(response)
+        end_time = time.time()
+        response_time_ms = int((end_time - start_time) * 1000)
+
         try:
-            insert_chat(user_input, response, sentiment)
+            insert_chat(
+                user_input=user_input,
+                bot_response=response,
+                text_sentiment=text_sentiment,
+                audio_sentiment=audio_sentiment,
+                fused_sentiment=sentiment,
+                user_audio_path=os.path.basename(file_path) if file else None,
+                tts_audio_path=os.path.basename(tts_path),
+                response_time_ms=response_time_ms,
+                session_id="session_xyz",  # You can generate or assign real session IDs later
+                intent="unknown"  # Placeholder – you can run a basic intent classifier
+            )
         except Exception as e:
             logger.error(f"DB insert failed: {e}")
+
+        # # Insert chat record in DB
+        # try:
+        #     insert_chat(user_input, response, sentiment)
+        # except Exception as e:
+        #     logger.error(f"DB insert failed: {e}")
 
         return JSONResponse({
             "response": response,

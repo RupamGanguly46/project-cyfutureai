@@ -189,6 +189,8 @@ def get_response(user_input: str, sentiment: str = None):
         context=context
     )
 
+    # print(messages)
+
     # Run LLM
     response = llm.invoke(messages)
 
