@@ -1276,6 +1276,29 @@ body {
   --shadow-heavy: rgba(0, 0, 0, 0.15);
 }
 
+/* GREEN THEME SIH */
+/*
+:root {
+  --primary-color: #28a745; 
+  --primary-hover: #218838; 
+  --secondary-color: #6c757d; 
+  --accent-color: #10b981; 
+  --danger-color: #dc3545; 
+  --warning-color: #ffc107; 
+  
+  --bg-primary: #ffffff; 
+  --bg-secondary: #f8f9fa; 
+  --bg-tertiary: #e2e6ea; 
+  --text-primary: #111827; 
+  --text-secondary: #6c757d; 
+  --text-muted: #9ca3af; 
+  --border-color: #e5e7eb; 
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.2);
+  --shadow-heavy: rgba(0, 0, 0, 0.3);
+}
+*/
+
 [data-theme="dark"] {
   --bg-primary: #111827;
   --bg-secondary: #1f2937;
@@ -1337,6 +1360,7 @@ body {
   }
 }
 
+
 .chat-header {
   background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
   padding: 24px 32px;
@@ -1345,7 +1369,19 @@ body {
   position: relative;
   backdrop-filter: blur(10px);
   border-radius: 20px 20px 0 0;
+} 
+
+/* GREEN THEME SIH */
+/*
+.chat-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  padding: 24px 32px;
+  text-align: center;
+  color: white;
+  position: relative;
+  backdrop-filter: blur(10px);
 }
+*/
 
 @media (max-width: 767px) {
   .chat-header {
@@ -1864,4 +1900,37 @@ body {
 
 * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* New for hyperlinks */
+/* Add link styles for bot messages */
+.message-content a {
+  color: var(--primary-color);
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.message-content a:hover {
+  color: var(--primary-hover);
+  text-decoration: none;
+}
+
+/* For user messages (white background), use white text for links */
+.message.user .message-content a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: underline;
+}
+
+.message.user .message-content a:hover {
+  color: white;
+  text-decoration: none;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .message-content a {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .message-content a:hover {
+  color: #93c5fd;
 }

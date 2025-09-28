@@ -310,6 +310,31 @@ async def limit_upload_size(request: Request, call_next):
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+# TO FORMAT TEXT AND REMOVE MARKDOWN SYNTAX FROM OUTPUT
+import re
+def clean_response_for_user(text):
+    """Clean LLM response minimally - only remove markdown syntax, keep structure"""
+    
+    # Remove markdown headers but keep text and structure
+    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
+    
+    # Remove bold/italic markers but keep text
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    text = re.sub(r'__(.*?)__', r'\1', text)
+    text = re.sub(r'_(.*?)_', r'\1', text)
+    
+    # Keep list structure but remove markdown markers
+    text = re.sub(r'^[-*+]\s+', '• ', text, flags=re.MULTILINE)
+    text = re.sub(r'^\d+\.\s+', '', text, flags=re.MULTILINE)
+    
+    # Keep [text](url) for frontend processing
+    
+    # Minimal whitespace cleanup - preserve most structure
+    text = re.sub(r'\n{4,}', '\n\n\n', text)  # Max 3 consecutive newlines
+    
+    return text.strip()
+
 @app.post("/chat/")
 async def chat_endpoint(text: str = Form(None), file: UploadFile = File(None)):
     user_input = ""
@@ -345,19 +370,24 @@ async def chat_endpoint(text: str = Form(None), file: UploadFile = File(None)):
         # # Generate TTS audio file path
         # tts_path = generate_tts(response)
 
+        # New lines for new database
+        import time
+        start_time = time.time()
+        response = get_response(user_input, sentiment)
+
+        # Clean the response for user display (remove markdown but keep links)
+        clean_response = clean_response_for_user(response)
+
+        # tts_path = generate_tts(response)
+        tts_path = generate_tts(clean_response)
+        end_time = time.time()
+        response_time_ms = int((end_time - start_time) * 1000)
+
         # Log only your custom info
         logger.info(f"{user_input=}")
         logger.info(f"{audio_sentiment=},{text_sentiment=},{sentiment=}")
         logger.info(f"{response=}")
         logger.info(f"{tts_path=}")
-
-        # New lines for new database
-        import time
-        start_time = time.time()
-        response = get_response(user_input, sentiment)
-        tts_path = generate_tts(response)
-        end_time = time.time()
-        response_time_ms = int((end_time - start_time) * 1000)
 
         try:
             insert_chat(
@@ -382,7 +412,7 @@ async def chat_endpoint(text: str = Form(None), file: UploadFile = File(None)):
         #     logger.error(f"DB insert failed: {e}")
 
         return JSONResponse({
-            "response": response,
+            "response": clean_response,
             "audio_path": tts_path,
             "user_audio_path": os.path.basename(file_path) if file else None
         })

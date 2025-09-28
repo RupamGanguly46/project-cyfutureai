@@ -682,21 +682,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI-Powered L1 Automation</title>
- <link rel="stylesheet" href="/static/styles.css"/>
+ <link rel="stylesheet" href="/static/SAKHIstyles.css"/>
  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 <body data-theme="light">
   <div class="chat-container">
     <div class="chat-header">
       <button class="theme-toggle" id="themeToggle">🌙</button>
-      <h1>AI-Powered L1 Assistant</h1>
-      <p>Ask questions or upload audio files</p>
+      <h1>SAKHI</h1>
+      <p id="headerCaption">Sometimes, all you need is a safe space to vent. Our AI counselor offers support so you can process your thoughts and find your footing.</p>
+      <!-- <p>Sometimes, all you need is a safe space to vent. Our AI counselor offers support so you can process your thoughts and find your footing.</p> -->
     </div>
 
     <div class="chat-messages" id="chatMessages">
       <div class="empty-chat">
         <div class="empty-chat-icon">🤖</div>
-        <h3>Welcome to AI Assistant</h3>
+        <h3>Hello there!</h3>
         <p>Type a message or record audio to get started</p>
       </div>
     </div>
@@ -723,6 +724,22 @@
   <script>
     class ChatInterface {
       constructor() {
+        // SIH Update
+        this.captions = [
+      "Sometimes, all you need is a safe space to vent. Our AI counselor offers support so you can process your thoughts and find your footing.",
+      "Take a moment to breathe. I'm here to listen and help you navigate through whatever you're facing.",
+      "Your mental health matters. Let's talk through your thoughts and feelings in a judgment-free space.",
+      "Every step forward counts. Share what's on your mind, and let's work through it together.",
+      "You don't have to face your challenges alone. I'm here to provide support and guidance whenever you need it.",
+      "It's okay to not be okay. Let's explore your thoughts and find healthy ways to cope.",
+      "Your feelings are valid. Talk to me about anything that's weighing on your heart or mind.",
+      "Healing happens one conversation at a time. I'm here to listen and support you through your journey.",
+      "Sometimes talking helps more than we realize. Share your thoughts and let's process them together.",
+      "You deserve peace of mind. Let me help you work through whatever is troubling you today.",
+      "Mental wellness is a journey, not a destination. I'm here to walk alongside you every step of the way.",
+      "Your story matters. Feel free to share what's on your mind in this safe, supportive space."
+    ];
+
         this.chatMessages = document.getElementById('chatMessages');
         this.textInput = document.getElementById('textInput');
         this.sendBtn = document.getElementById('sendBtn');
@@ -736,11 +753,30 @@
         this.mediaRecorder = null;
         this.audioChunks = [];
         this.conversations = [];
+        
+        // SIH Update
+        this.currentCaptionIndex = 0;
+        this.setRandomCaption();
 
         this.initializeEventListeners();
         this.initializeTheme();
         this.autoResizeTextarea();
       }
+
+      // SIH Update
+      setRandomCaption() {
+        const headerDescription = document.getElementById('headerCaption');
+        if (!headerDescription) return;
+
+        // Set initial caption
+        headerDescription.textContent = this.captions[this.currentCaptionIndex];
+
+        // Change caption every 5 seconds
+        setInterval(() => {
+          this.currentCaptionIndex = (this.currentCaptionIndex + 1) % this.captions.length;
+          headerDescription.textContent = this.captions[this.currentCaptionIndex];
+        }, 5000); // 5000 milliseconds = 5 seconds
+  }
 
       initializeEventListeners() {
         this.sendBtn.addEventListener('click', () => this.handleSend());
@@ -882,6 +918,41 @@
         event.target.value = '';
       }
 
+      // addMessage(content, type, audioUrl = null) {
+      //   const emptyChat = this.chatMessages.querySelector('.empty-chat');
+      //   if (emptyChat) emptyChat.remove();
+
+      //   const messageDiv = document.createElement('div');
+      //   messageDiv.className = `message ${type}`;
+
+      //   const now = new Date();
+      //   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      //   let audioHtml = '';
+      //   if (audioUrl) {
+      //     audioHtml = `
+      //       <div class="audio-player">
+      //         <audio controls>
+      //           <source src="${audioUrl}" type="audio/mpeg" />
+      //           Your browser does not support the audio element.
+      //         </audio>
+      //       </div>`;
+      //   }
+
+      //   messageDiv.innerHTML = `
+      //     <div class="message-content">
+      //       <div>${content}</div>
+      //       ${audioHtml}
+      //       <div class="message-time">${timeStr}</div>
+      //     </div>
+      //   `;
+
+      //   this.chatMessages.appendChild(messageDiv);
+      //   this.scrollToBottom();
+
+      //   this.conversations.push({ type, content, audioUrl, timestamp: now.toISOString() });
+      // }
+
       addMessage(content, type, audioUrl = null) {
         const emptyChat = this.chatMessages.querySelector('.empty-chat');
         if (emptyChat) emptyChat.remove();
@@ -903,9 +974,12 @@
             </div>`;
         }
 
+        // Convert markdown links to HTML links
+        const processedContent = this.convertLinksToHtml(content);
+
         messageDiv.innerHTML = `
           <div class="message-content">
-            <div>${content}</div>
+            <div>${processedContent}</div>
             ${audioHtml}
             <div class="message-time">${timeStr}</div>
           </div>
@@ -915,6 +989,12 @@
         this.scrollToBottom();
 
         this.conversations.push({ type, content, audioUrl, timestamp: now.toISOString() });
+      }
+
+      // Add this new method to convert markdown links to HTML
+      convertLinksToHtml(text) {
+        // Convert [text](url) to <a href="url" target="_blank">text</a>
+        return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
       }
 
       showProcessing() {

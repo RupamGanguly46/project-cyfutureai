@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 #     TextLoader, PDFPlumberLoader, Docx2txtLoader,
 #     UnstructuredPowerPointLoader, UnstructuredExcelLoader, CSVLoader
 # )
-from langchain.text_splitter import CharacterTextSplitter
 # from langchain.embeddings import AzureOpenAIEmbeddings
 # from langchain.vectorstores import FAISS
 
@@ -49,27 +48,54 @@ def save_hash(hash_value):
 # ✅ Document loader
 def load_documents(folder_path):
     docs = []
-    for filename in os.listdir(folder_path):
-        path = os.path.join(folder_path, filename)
-        ext = filename.lower().split('.')[-1]
-        try:
-            if ext == "txt":
-                docs.extend(TextLoader(path).load())
-            elif ext == "pdf":
-                docs.extend(PDFPlumberLoader(path).load())
-            elif ext == "docx":
-                docs.extend(Docx2txtLoader(path).load())
-            elif ext in ["ppt", "pptx"]:
-                docs.extend(UnstructuredPowerPointLoader(path).load())
-            elif ext in ["xls", "xlsx"]:
-                docs.extend(UnstructuredExcelLoader(path).load())
-            elif ext == "csv":
-                docs.extend(CSVLoader(path).load())
-            else:
-                print(f"Unsupported file type: {filename}")
-        except Exception as e:
-            print(f"Failed to load {filename}: {e}")
+    # for filename in os.listdir(folder_path):
+        # path = os.path.join(folder_path, filename)
+   
+    for root, _, files in os.walk(folder_path):
+        for filename in files:
+            path = os.path.join(root, filename)
+
+            ext = filename.lower().split('.')[-1]
+            try:
+                if ext in ["txt","md"]:
+                    docs.extend(TextLoader(path, encoding="utf-8").load())
+                elif ext == "pdf":
+                    docs.extend(PDFPlumberLoader(path).load())
+                elif ext == "docx":
+                    docs.extend(Docx2txtLoader(path).load())
+                elif ext in ["ppt", "pptx"]:
+                    docs.extend(UnstructuredPowerPointLoader(path).load())
+                elif ext in ["xls", "xlsx"]:
+                    docs.extend(UnstructuredExcelLoader(path).load())
+                elif ext == "csv":
+                    docs.extend(CSVLoader(path).load())
+                else:
+                    print(f"Unsupported file type: {filename}")
+            except Exception as e:
+                import traceback
+                print(f"Failed to load {filename}: {repr(e)}")
+                traceback.print_exc()
     return docs
+
+import re
+def clean_markdown_and_extract_links(text):
+    """Extract links but PRESERVE other markdown formatting for LLM context"""
+    urls = []
+    
+    # Only extract links, keep everything else
+    def replacer(match):
+        label, url = match.groups()
+        urls.append((label, url))
+        return f"[{label}]({url})"  # Keep the markdown link format
+    
+    text = re.sub(r'\[(.*?)\]\((.*?)\)', replacer, text)
+    
+    # Don't remove headers, bold, etc. - LLM needs this context!
+    # Only clean up excessive whitespace
+    text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)  # Max 2 consecutive newlines
+    
+    return text.strip(), urls
+
 
 # ✅ Azure OpenAI Embeddings Setup
 embeddings = AzureOpenAIEmbeddings(
@@ -80,18 +106,47 @@ embeddings = AzureOpenAIEmbeddings(
     openai_api_version="2024-02-01"
 )
 
-# ✅ Index builder
+from langchain.schema import Document
+from langchain.text_splitter import MarkdownHeaderTextSplitter, CharacterTextSplitter
+
+# ✅ Hybrid split & clean
 def build_index(folder_path, index_path):
     docs = load_documents(folder_path)
-    splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     chunks = []
-    for doc in docs:
-        chunks.extend(splitter.split_documents([doc]))
-    
-    if not chunks:
-        print("⚠️ No chunks to embed — skipping FAISS index creation.")
-        return None
+    char_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    md_splitter = MarkdownHeaderTextSplitter(
+    headers_to_split_on=[
+        ("#", "H1"),
+        ("##", "H2"),
+        ("###", "H3"),
+        ]
+    )
 
+    for doc in docs:
+        if doc.metadata.get('source', '').lower().endswith('.md'):
+            splits = md_splitter.split_text(doc.page_content)
+            for split in splits:
+                cleaned, urls = clean_markdown_and_extract_links(split.page_content)
+                if cleaned:
+                    chunks.append(Document(
+                        page_content=cleaned,
+                        metadata={"urls": urls}
+                    ))
+
+        else:
+            char_chunks = char_splitter.split_documents([doc])
+            for chunk in char_chunks:
+                cleaned, urls = clean_markdown_and_extract_links(chunk.page_content)
+                if cleaned:
+                    chunks.append(Document(
+                        page_content=cleaned,
+                        metadata={"urls": urls}
+                    ))
+
+    if not chunks:
+        print("⚠️ No chunks created — index build skipped.")
+        return None
+    
     vectorstore = FAISS.from_documents(chunks, embeddings)
     vectorstore.save_local(index_path)
     return vectorstore
@@ -109,10 +164,45 @@ else:
     # vectorstore = FAISS.load_local(INDEX_PATH, embeddings)
     vectorstore = FAISS.load_local(INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
 
+def strip_bold(text):
+    return re.sub(r'\*\*(.*?)\*\*', r'\1', text)
 
 # ✅ Retrieval function
+# def retrieve_context(query, k=3):
+#     if not vectorstore:
+#         return "⚠️ No knowledge base available yet."
+#     docs = vectorstore.similarity_search(query, k=k)
+#     # return "\n".join([doc.page_content for doc in docs])
+#     results = []
+#     for doc in docs:
+#         text = strip_bold(doc.page_content)
+#         urls = doc.metadata.get("urls", [])
+#         # Replace link text with "label (url)"
+#         for label, url in urls:
+#             text = text.replace(label, f"{label} ({url})")
+#         results.append(text)
+#     return "\n\n".join(results)
+
+# def retrieve_context(query, k=3):
+#     if not vectorstore:
+#         return "⚠️ No knowledge base available yet."
+
 def retrieve_context(query, k=3):
+    """Return context WITH markdown formatting for LLM"""
     if not vectorstore:
         return "⚠️ No knowledge base available yet."
+
     docs = vectorstore.similarity_search(query, k=k)
-    return "\n".join([doc.page_content for doc in docs])
+    results = []
+    for doc in docs:
+        text = doc.page_content  # Keep ALL formatting
+        urls = doc.metadata.get("urls", [])
+
+        # Ensure links are properly formatted
+        for label, url in urls:
+            if f"[{label}]({url})" not in text:
+                text = re.sub(rf'(?<!\w){re.escape(label)}(?!\w)', f"[{label}]({url})", text)
+
+        results.append(text)
+
+    return "\n\n".join(results)

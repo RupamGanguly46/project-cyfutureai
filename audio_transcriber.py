@@ -80,7 +80,7 @@
 # Tamil	        ta
 # Telugu	    te
 
-# MEGA VERSION : WHISPER + BHASHINI Lang Detect + Bhashini STT
+# MEGA VERSION : WHISPER + BHASHINI Lang Detect + Sarvam STT
 import base64
 import requests
 import json
